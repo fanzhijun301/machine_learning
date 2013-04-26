@@ -5,7 +5,7 @@ SRC = ../src/
 INCLUDE = -I../include
 
 OBJS = $(SRC)matrix.o
-OBJS_PP = $(SRC)utest.o
+OBJS_PP = $(SRC)regression.o $(SRC)utils.o
 LIB =  
 TARGET = ../bin/regression
 

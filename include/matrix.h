@@ -3,16 +3,15 @@
 
 #include <stdlib.h>
 
-
 typedef struct Matrix {
 	size_t row_len;
 	size_t col_len;
 	float *arr;
 } Matrix;
 
-int init(Matrix *matrix, size_t row_len, size_t col_len);
+int init_matrix(Matrix *matrix, size_t row_len, size_t col_len);
 
-int release(Matrix *matrix);
+int release_matrix(Matrix *matrix);
 
 float get_value(Matrix *matrix, size_t row, size_t col);
 

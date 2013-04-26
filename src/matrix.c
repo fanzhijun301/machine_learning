@@ -4,7 +4,7 @@
 
 #include "matrix.h"
 
-int init(Matrix *matrix, size_t row_len, size_t col_len) {
+int init_matrix(Matrix *matrix, size_t row_len, size_t col_len) {
 	float *arr = (float *)calloc(row_len * col_len, sizeof(float));
 	matrix->arr = arr;
 	matrix->row_len = row_len;
@@ -13,7 +13,7 @@ int init(Matrix *matrix, size_t row_len, size_t col_len) {
 	return 0;
 }
 
-int release(Matrix *matrix) {
+int release_matrix(Matrix *matrix) {
 	float *arr = matrix->arr;
 	free(arr);
 	return 0;
