@@ -99,7 +99,40 @@ void Regression :: read_train_file(Matrix *matrix, string train_file) {
 }
 
 void Regression :: train(string src_file, string model_file) {
-	
+	Matrix matrix, tr_matrix, multi_matrix, inv_matrix;
+	read_train_file(&matrix, src_file);
+	transpose(&matrix, &tr_matrix);
+	multiple(&matrix, &matrix, &multi_matrix);
+	release_matrix(&matrix);
+	inverse(&multi_matrix, &matrix);
+	release_matrix(&multi_matrix);
+	multiple(&matrix, &tr_matrix, &multi_matrix);
+	size_t predict_len = predict_vec->size();
+	Matrix predict_matr;
+	init_matrix(&predict_matr, predict_len, 1);
+	float *pre_arr = predict_matr.arr;
+	for (size_t i = 0; i < predict_vec->size(); i++) {
+		float pre = predict_vec->at(i);
+		*(pre_arr + i) = pre;
+	}
+	Matrix weight_matrix;
+	multiple(&multi_matrix, &predict_matr, &weight_matrix);
+	float *weight_arr = weight_matrix.arr;
+	size_t wei_col = weight_matrix.row_len;
+	ofstream out_model(model_file.c_str());
+	for (size_t i = 0; i < wei_col; i++) {
+		float weight = *(weight_arr + i);
+		if (i == 0) out_model << weight;
+		else out_model << " " << weight;
+	}
+	out_model << endl;
+	release_matrix(&weight_matrix);
+	release_matrix(&predict_matr);
+	release_matrix(&matrix);
+	release_matrix(&tr_matrix);
+	release_matrix(&multi_matrix);
+	release_matrix(&inv_matrix);
+	out_model.close();
 }
 
 void Regression :: predict(string src_file, string model_file, string tgt_file) {

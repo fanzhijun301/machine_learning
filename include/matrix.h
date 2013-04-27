@@ -27,7 +27,7 @@ int inverse(Matrix *matrix, Matrix *inverse_matri);
 
 float Creat_M(float *p, int m, int n, int k);
 
-int transpose(Matrix *matrix);
+int transpose(Matrix *matrix, Matrix *trans_matrix);
 
 int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re);
 

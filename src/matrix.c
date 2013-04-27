@@ -45,7 +45,9 @@ int print_matrix(Matrix *matrix) {
 }
 
 int inverse(Matrix *matrix, Matrix *inverse_matri) {
+	
 	size_t n = matrix->col_len;
+	init_matrix(inverse_matri, n, n);
 	float *arr = matrix->arr;
 	float *inver_arr = inverse_matri->arr;
 	Gauss(arr, inver_arr, n);
@@ -229,27 +231,45 @@ bool Gauss(float *A, float *B, size_t n)
     return true;
 }
 
-int transpose(Matrix *matrix) {
+int transpose(Matrix *matrix, Matrix *trans_matrix) {
 	int row_len = matrix->row_len;
 	int col_len = matrix->col_len;
-	if (row_len != col_len) {
-		fprintf(stderr, "row_len not equal col_len\n");
-		return -1;
-	}
+	init_matrix(trans_matrix, col_len, row_len);
 
 	float *arr = matrix->arr;
+	float *trans_arr = trans_matrix->arr;
 	int i, j;
 	for (i = 0; i < row_len; i++) {
 		for (j = 0; j < i; j++) {
 			float d = *(arr + i * col_len + j);
-			*(arr + i * col_len + j) = *(arr + j * col_len + i);
-			*(arr + j * col_len + i) = d;
+			*(trans_arr + j * col_len + i) = d;
 		}
 	}
 	return 0;
 }
 
 int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re) {
+	size_t a_row = matr_a->row_len;
+	size_t a_col = matr_a->col_len;
+	size_t b_row = matr_b->row_len;
+	size_t b_col = matr_b->col_len;
+
+	float *a_arr = matr_a->arr;
+	float *b_arr = matr_b->arr;
+	init_matrix(matr_re, a_row, b_col);
+	float *re_arr = matr_re->arr;
+	for (size_t i = 0; i < a_row; i++) {
+		for (size_t j = 0; j < b_col; j++) {
+			float re_i_j = 0;
+			for (size_t k = 0; j < a_col; j++) {
+				float a_i_k = *(a_arr + i * a_col + k);
+				float b_k_j = *(b_arr + k * b_col + j);
+				re_i_j += a_i_k * b_k_j;
+			}
+			*(re_arr + i * b_col + j) = re_i_j;
+		}
+	}
+
 	return 0;
 }
 
