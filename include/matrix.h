@@ -34,4 +34,6 @@ int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re);
 int Gauss(float *A, float *B, size_t n);
 
 int inverse_define(Matrix *matrix, Matrix *inverse_matri);
+
+int add_E(Matrix *matr, float e);
 #endif

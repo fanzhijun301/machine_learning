@@ -32,7 +32,7 @@ public:
 
 	void init();
 	void release();
-	int train(string train_file, string model_file);
+	int train(string train_file, string model_file, float ridge_e);
 	int predict(string predict_file, string model_file, string result_file);
 	int validate(string pre_result_file, string validate_file);
 };

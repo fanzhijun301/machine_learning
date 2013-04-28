@@ -98,7 +98,7 @@ void Regression :: read_train_file(Matrix *matrix, string train_file) {
 	delete matrix_vec_vec;
 }
 
-int Regression :: train(string src_file, string model_file) {
+int Regression :: train(string src_file, string model_file, float ridge_e) {
 	Matrix matrix, tr_matrix, multi_matrix;
 	read_train_file(&matrix, src_file);
 	fprintf(stderr, "train matrix init ok\n");
@@ -107,6 +107,8 @@ int Regression :: train(string src_file, string model_file) {
 	multiple(&tr_matrix, &matrix, &multi_matrix);
 	fprintf(stderr, "multiple 1 ok\n");
 	release_matrix(&matrix);
+	//ridge regression;
+	add_E(&multi_matrix, ridge_e);
 	bool is_inv = inverse(&multi_matrix, &matrix);
 	if (is_inv != 0) {
 		release_matrix(&matrix);
@@ -227,7 +229,7 @@ int Regression :: validate(string predict_file, string pre_result_file) {
 }
 
 void mention_msg() {
-	cout << "train train_file model_file" << endl;
+	cout << "train train_file model_file ridge_e" << endl;
 	cout << "predict predict_file model_file result_file" << endl;
 	cout << "valid predict_file pre_result_file" << endl;
 }
@@ -241,8 +243,10 @@ int main(int argc, char **argv) {
 	if (comm == "train") {
 		string train_file = string(argv[2]);
 		string model_file = string(argv[3]);
+		string ridge_e_s = string(argv[4]);
+		float ridge_f = atof(ridge_e_s.c_str());
 		Regression reg;
-		int r = reg.train(train_file, model_file);
+		int r = reg.train(train_file, model_file, ridge_f);
 		if (r == 0) fprintf(stderr, "train ok\n");
 		else fprintf(stderr, "train failed\n");
 	} else if (comm == "predict") {

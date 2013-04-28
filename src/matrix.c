@@ -263,6 +263,18 @@ int transpose(Matrix *matrix, Matrix *trans_matrix) {
 	return 0;
 }
 
+int add_E(Matrix *matr, float e) {
+	size_t row_len = matr->row_len;
+	size_t col_len = matr->col_len;
+	size_t mini_len = (row_len <= col_len)?row_len:col_len;
+	size_t i;
+	float *arr = matr->arr;
+	for (i = 0; i < mini_len; i++) {
+		*(arr + i * col_len + i) += e;
+	} 
+	return 0;
+}
+
 int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re) {
 	size_t a_row = matr_a->row_len;
 	size_t a_col = matr_a->col_len;
