@@ -50,7 +50,7 @@ void Regression :: read_train_file(Matrix *matrix, string train_file) {
 	while (getline(in_train, line)) {
 		vector<string> split_vec;
 		utils.strsplit(line, " ", split_vec);
-		bool first;
+		bool first = true;
 		vector<index_value *> *iv_vec = new vector<index_value *>();
 		matrix_vec_vec->push_back(iv_vec);
 		for (vector<string>::iterator it_vec = split_vec.begin(); 
@@ -77,7 +77,7 @@ void Regression :: read_train_file(Matrix *matrix, string train_file) {
 	col_len = max_col;
 	row_len = row;
 	in_train.close();
-	
+
 	init_matrix(matrix, row_len, col_len);
 	
 	vector<vector<index_value *> *>::iterator it_vec_vec;
@@ -98,54 +98,138 @@ void Regression :: read_train_file(Matrix *matrix, string train_file) {
 	delete matrix_vec_vec;
 }
 
-void Regression :: train(string src_file, string model_file) {
-	Matrix matrix, tr_matrix, multi_matrix, inv_matrix;
+int Regression :: train(string src_file, string model_file) {
+	Matrix matrix, tr_matrix, multi_matrix;
 	read_train_file(&matrix, src_file);
+	fprintf(stderr, "train matrix init ok\n");
 	transpose(&matrix, &tr_matrix);
-	multiple(&matrix, &matrix, &multi_matrix);
+	fprintf(stderr, "transpos ok\n");
+	multiple(&tr_matrix, &matrix, &multi_matrix);
+	fprintf(stderr, "multiple 1 ok\n");
 	release_matrix(&matrix);
-	inverse(&multi_matrix, &matrix);
+	bool is_inv = inverse(&multi_matrix, &matrix);
+	if (is_inv != 0) {
+		release_matrix(&matrix);
+		release_matrix(&tr_matrix);
+		release_matrix(&multi_matrix);
+		fprintf(stderr, "There is no inverse matrix!\n");
+		return 1;
+	}
+	fprintf(stderr, "inverse ok\n");
 	release_matrix(&multi_matrix);
 	multiple(&matrix, &tr_matrix, &multi_matrix);
+	fprintf(stderr, "multiple transpose ok\n");
 	size_t predict_len = predict_vec->size();
-	Matrix predict_matr;
-	init_matrix(&predict_matr, predict_len, 1);
-	float *pre_arr = predict_matr.arr;
+	Matrix predict_matrix;
+	init_matrix(&predict_matrix, predict_len, 1);
+	float *pre_arr = predict_matrix.arr;
 	for (size_t i = 0; i < predict_vec->size(); i++) {
 		float pre = predict_vec->at(i);
 		*(pre_arr + i) = pre;
 	}
 	Matrix weight_matrix;
-	multiple(&multi_matrix, &predict_matr, &weight_matrix);
+	multiple(&multi_matrix, &predict_matrix, &weight_matrix);
+	fprintf(stderr, "multiple predict ok\n");
 	float *weight_arr = weight_matrix.arr;
 	size_t wei_col = weight_matrix.row_len;
 	ofstream out_model(model_file.c_str());
 	for (size_t i = 0; i < wei_col; i++) {
 		float weight = *(weight_arr + i);
-		if (i == 0) out_model << weight;
-		else out_model << " " << weight;
+		if (i == 0) out_model << i + 1 << ":" << weight;
+		else out_model << " " << i + 1 << ":" << weight;
 	}
 	out_model << endl;
+	fprintf(stderr, "model output ok\n");
 	release_matrix(&weight_matrix);
-	release_matrix(&predict_matr);
+	release_matrix(&predict_matrix);
 	release_matrix(&matrix);
 	release_matrix(&tr_matrix);
 	release_matrix(&multi_matrix);
-	release_matrix(&inv_matrix);
 	out_model.close();
+	return 0;
 }
 
-void Regression :: predict(string src_file, string model_file, string tgt_file) {
-	
+int Regression :: predict(string predict_file, string model_file, string result_file) {
+	UTILS utils;
+	string line;
+	map<size_t, float> *coeff_map = new map<size_t, float>();
+	//init model
+	ifstream in_model(model_file.c_str());
+	if (getline(in_model, line)) {
+		vector<string> split_vec;
+		utils.strsplit(line, " ", split_vec);
+		for (vector<string>::iterator it_vec = split_vec.begin(); it_vec != split_vec.end(); it_vec++) {
+			string index_coeff = *it_vec;
+			string index = index_coeff.substr(0, index_coeff.find(":"));
+			string coeff = index_coeff.substr(index_coeff.find(":") + 1);
+			int index_i = atoi(index.c_str());
+			float coeff_f = atof(coeff.c_str());
+			coeff_map->insert(pair<size_t, float>(index_i, coeff_f));
+		}
+	}
+	in_model.close();
+
+	//read predict file
+	ofstream out_result(result_file.c_str());
+	ifstream in_predict(predict_file.c_str());
+	map<size_t, float>::iterator it_coeff;
+	while (getline(in_predict, line)) {
+		vector<string> split_vec;
+		utils.strsplit(line, " ", split_vec);
+		bool first = true;
+		float result = 0.0f;
+		for (vector<string>::iterator it_vec = split_vec.begin(); 
+				it_vec != split_vec.end(); it_vec++) {
+			if (first) {
+				first = false;
+			} else {
+				string index_fea = *it_vec;
+				string index = index_fea.substr(0, index_fea.find(":"));
+				string fea = index_fea.substr(index_fea.find(":") + 1);
+				size_t index_i = atoi(index.c_str());
+				it_coeff = coeff_map->find(index_i);
+				if (it_coeff != coeff_map->end()) {
+					float coeff = it_coeff->second;
+					float fea_f = atof(fea.c_str());
+					result += coeff * fea_f;
+				}
+			}
+		}
+		out_result << result << endl;
+	}
+	in_predict.close();
+	out_result.close();
+	delete coeff_map;
+	return 0;
 }
 
-void Regression :: validate(string predict_file, string pre_result_file) {
-	
+int Regression :: validate(string predict_file, string pre_result_file) {
+	ifstream in_predict(predict_file.c_str());
+	ifstream in_pre_result(pre_result_file.c_str());
+	string line_predict, line_pre_result;
+	float mse = 0;
+	size_t line_num = 0;
+	while (getline(in_predict, line_predict) && getline(in_pre_result, line_pre_result))
+	{
+		string pre = line_predict.substr(0, line_predict.find(" "));
+		float pre_f = atof(pre.c_str());
+		float pre_result_f = atof(line_pre_result.c_str());
+		mse += (pre_f - pre_result_f) * (pre_f - pre_result_f);
+		line_num++;
+	}
+	in_pre_result.close();
+	in_predict.close();
+	if (line_num != 0) {
+		mse /= line_num;
+		fprintf(stderr, "mse:%f\n", mse);
+	} else fprintf(stderr, "no predict\n");
+	return 0;
 }
 
 void mention_msg() {
 	cout << "train train_file model_file" << endl;
 	cout << "predict predict_file model_file result_file" << endl;
+	cout << "valid predict_file pre_result_file" << endl;
 }
 
 int main(int argc, char **argv) {
@@ -158,13 +242,22 @@ int main(int argc, char **argv) {
 		string train_file = string(argv[2]);
 		string model_file = string(argv[3]);
 		Regression reg;
-		reg.train(train_file, model_file);
+		int r = reg.train(train_file, model_file);
+		if (r == 0) fprintf(stderr, "train ok\n");
+		else fprintf(stderr, "train failed\n");
 	} else if (comm == "predict") {
 		string predict_file = string(argv[2]);
 		string model_file = string(argv[3]);
 		string result_file = string(argv[4]);
 		Regression reg;
 		reg.predict(predict_file, model_file, result_file);
+		cout << "predict ok" << endl;
+	} else if (comm == "valid") {
+		string predict_file = string(argv[2]);
+		string pre_result_file = string(argv[3]);
+		Regression reg;
+		reg.validate(predict_file, pre_result_file);
+		cout << "validate ok" << endl;
 	} else {
 		mention_msg();
 	}

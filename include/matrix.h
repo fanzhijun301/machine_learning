@@ -31,7 +31,7 @@ int transpose(Matrix *matrix, Matrix *trans_matrix);
 
 int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re);
 
-bool Gauss(float *A, float *B, size_t n);
+int Gauss(float *A, float *B, size_t n);
 
 int inverse_define(Matrix *matrix, Matrix *inverse_matri);
 #endif

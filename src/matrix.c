@@ -6,6 +6,10 @@
 
 int init_matrix(Matrix *matrix, size_t row_len, size_t col_len) {
 	float *arr = (float *)calloc(row_len * col_len, sizeof(float));
+	if (arr == NULL) {
+		fprintf(stderr, "malloc memory err\n");
+		exit(1);
+	}
 	matrix->arr = arr;
 	matrix->row_len = row_len;
 	matrix->col_len = col_len;
@@ -104,6 +108,10 @@ float Determinant_in(float *a, size_t n)
 		det = 0;
 		for (j1=0;j1<n;j1++) {
 			m = (float *)calloc((n - 1) * (n - 1), sizeof(float *));
+			if (m == NULL) {
+				fprintf(stderr, "malloc memory err\n");
+				exit(1);
+			}
 			for (i=1;i<n;i++) {
 				j2 = 0;
 				for (j=0;j<n;j++) {
@@ -130,7 +138,11 @@ float Creat_M(float *p, int m, int n, int k)
 
     len = (k-1)*(k-1);            //k阶矩阵的代数余之式为k-1阶矩阵
     p_creat = (float*)calloc(len, sizeof(float)); //分配内存单元
-    p_mid = p_creat;
+    if (p_creat == NULL) {
+		fprintf(stderr, "malloc memory err\n");
+		exit(1);
+	}
+	p_mid = p_creat;
     for (i = 0; i < k; i++)
     {
         for (j = 0; j < k; j++)
@@ -152,13 +164,17 @@ float Creat_M(float *p, int m, int n, int k)
 //入口参数: 输入方阵，输出方阵，方阵阶数
 //返回值: true or false
 //----------------------------------------------
-bool Gauss(float *A, float *B, size_t n)
+int Gauss(float *A, float *B, size_t n)
 {
     size_t i, j, k;
     float max, temp;
 	size_t len = n * n;
     float *t = (float *)calloc(len, sizeof(float));                //临时矩阵
-    //将A矩阵存放在临时矩阵t[n][n]中
+    if (t == NULL) {
+		fprintf(stderr, "malloc memory err\n");
+		return 1;
+	}
+	//将A矩阵存放在临时矩阵t[n][n]中
     for (i = 0; i < n; i++)        
     {
         for (j = 0; j < n; j++)
@@ -204,8 +220,7 @@ bool Gauss(float *A, float *B, size_t n)
         //判断主元是否为0, 若是, 则矩阵A不是满秩矩阵,不存在逆矩阵
         if (*(t+i*n+i) == 0)
         {
-            fprintf(stderr, "There is no inverse matrix!");
-            return false;
+            return 1;
         }
         //消去A的第i列除去i行以外的各行元素
         temp = *(t+i*n+i);
@@ -228,7 +243,7 @@ bool Gauss(float *A, float *B, size_t n)
         }
     }
 	free(t);
-    return true;
+    return 0;
 }
 
 int transpose(Matrix *matrix, Matrix *trans_matrix) {
@@ -240,9 +255,9 @@ int transpose(Matrix *matrix, Matrix *trans_matrix) {
 	float *trans_arr = trans_matrix->arr;
 	int i, j;
 	for (i = 0; i < row_len; i++) {
-		for (j = 0; j < i; j++) {
+		for (j = 0; j < col_len; j++) {
 			float d = *(arr + i * col_len + j);
-			*(trans_arr + j * col_len + i) = d;
+			*(trans_arr + j * row_len + i) = d;
 		}
 	}
 	return 0;
@@ -251,7 +266,6 @@ int transpose(Matrix *matrix, Matrix *trans_matrix) {
 int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re) {
 	size_t a_row = matr_a->row_len;
 	size_t a_col = matr_a->col_len;
-	size_t b_row = matr_b->row_len;
 	size_t b_col = matr_b->col_len;
 
 	float *a_arr = matr_a->arr;
@@ -261,7 +275,7 @@ int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re) {
 	for (size_t i = 0; i < a_row; i++) {
 		for (size_t j = 0; j < b_col; j++) {
 			float re_i_j = 0;
-			for (size_t k = 0; j < a_col; j++) {
+			for (size_t k = 0; k < a_col; k++) {
 				float a_i_k = *(a_arr + i * a_col + k);
 				float b_k_j = *(b_arr + k * b_col + j);
 				re_i_j += a_i_k * b_k_j;

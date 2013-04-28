@@ -32,9 +32,9 @@ public:
 
 	void init();
 	void release();
-	void train(string src_file, string model_file);
-	void predict(string src_file, string model_file, string tgt_file);
-	void validate(string predict_file, string pre_result_file);
+	int train(string train_file, string model_file);
+	int predict(string predict_file, string model_file, string result_file);
+	int validate(string pre_result_file, string validate_file);
 };
 
 #endif
