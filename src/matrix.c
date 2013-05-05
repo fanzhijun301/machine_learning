@@ -299,3 +299,95 @@ int multiple(Matrix *matr_a, Matrix *matr_b, Matrix *matr_re) {
 	return 0;
 }
 
+float col_vec_multi(float *a, float *b, size_t col_a, size_t col_b, size_t col_len, size_t row_len) {
+	size_t i;
+	float sum = 0;
+	for (i = 0; i < row_len; i++) {
+		sum += *(a + i * col_len + col_a) * *(b + i * col_len + col_b);
+	}
+	return sum;
+}
+
+float vec_multi(float *a, float *b, size_t len) {
+	float sum = 0;
+	size_t i;
+	for (i = 0; i < len; i++) {
+		sum += *(a + i) * *(b + i);
+	}
+	return sum;
+}
+
+int ortho_decom(Matrix *src_matr, Matrix *ortho_matr, Matrix *coff_matr) {
+	size_t row_len = src_matr->row_len;
+	size_t col_len = src_matr->col_len;
+	init_matrix(ortho_matr, row_len, col_len);
+	init_matrix(coff_matr, row_len, col_len);
+	size_t i,j;
+	float *src_arr = src_matr->arr;
+	float *ortho_arr = ortho_matr->arr;
+	float *coef_arr = coff_matr->arr;
+	//copy the first row x to z
+	for (i = 0; i < row_len; i++) {
+		*(ortho_arr + i * col_len) = *(src_arr + i * col_len);
+	}
+	//caculate coff and ortho
+	for (j = 1; j < col_len; j++) {
+		//coef
+		size_t l;
+		for (l = 0; l < j; l++) {
+			//coff(l,j)
+			float coef_ortho_l_j = col_vec_multi(ortho_arr, src_arr, l, j, col_len, row_len);
+			float ortho_l_l = col_vec_multi(ortho_arr, ortho_arr, l, l, col_len, row_len);
+			float coef_l_j = coef_ortho_l_j / ortho_l_l;
+			*(coef_arr + l * col_len + j) = coef_l_j;
+		}
+		//ortho_j
+		size_t k;
+		float coef_ortho_arr[row_len];
+		for (k = 0; k < j - 1; k++) {
+			float coef_k_j = *(coef_arr + k * col_len + j);
+			size_t t;
+			for (t = 0; t < row_len; t++) {
+				if (k == 0) {
+					coef_ortho_arr[t] = coef_k_j * *(ortho_arr + t * col_len + k);	
+				} else {
+					coef_ortho_arr[t] += coef_k_j * *(ortho_arr + t * col_len + k);
+				}
+			}
+		}
+		for (i = 0; i < row_len; i++) {
+			size_t offset = i * col_len + j;
+			*(ortho_arr + offset) = *(src_arr + offset) - coef_ortho_arr[i];
+		}
+	}
+	return 0;
+}
+
+int qr_decom(Matrix *src_matr, Matrix *q_matr, Matrix *r_matr) {
+	size_t row_len = src_matr->row_len;
+	size_t col_len = src_matr->col_len;
+	
+	Matrix ortho_matr, coef_matr, d_matr, d_inv_matr;
+	ortho_decom(src_matr, &ortho_matr, &coef_matr);
+	init_matrix(&d_matr, col_len, col_len);
+	size_t j;
+	float *ortho_arr = ortho_matr.arr;
+	float *d_arr = d_matr.arr;
+	for (j = 0; j < col_len; j++) {
+		float sum_multi = col_vec_multi(ortho_arr, ortho_arr, j, j, col_len, row_len);
+		*(d_arr + j * col_len + j) = sum_multi;
+	}
+	inverse(&d_matr, &d_inv_matr);
+	init_matrix(q_matr, row_len, col_len);
+	init_matrix(r_matr, col_len, col_len);
+	multiple(&ortho_matr, &d_inv_matr, q_matr);
+	multiple(&d_matr, &coef_matr, r_matr);
+
+	//clear
+	release_matrix(&ortho_matr);
+	release_matrix(&coef_matr);
+	release_matrix(&d_matr);
+	release_matrix(&d_inv_matr);
+	
+	return 0;
+}

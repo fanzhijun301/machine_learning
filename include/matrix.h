@@ -36,4 +36,8 @@ int Gauss(float *A, float *B, size_t n);
 int inverse_define(Matrix *matrix, Matrix *inverse_matri);
 
 int add_E(Matrix *matr, float e);
+
+int ortho_decom(Matrix *src_matr, Matrix *ortho_matr, Matrix *coff_matr);
+
+int qr_decom(Matrix *src_matr, Matrix *q_matr, Matrix *r_matr);
 #endif
